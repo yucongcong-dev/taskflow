@@ -1,0 +1,91 @@
+﻿<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TaskFlow - AI Workflow Agent</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,system-ui,sans-serif;background:#0a0a0f;color:#e0e0e0;min-height:100vh;display:flex;flex-direction:column;align-items:center}
+.header{width:100%;max-width:800px;padding:20px 24px;display:flex;justify-content:space-between;align-items:center}
+.logo{font-size:1.3rem;font-weight:700}.logo span{color:#4285f4}
+.badge{font-size:.7rem;padding:4px 12px;border-radius:20px;background:#1a1a2e;color:#4285f4;border:1px solid #2a2a3e}
+.main{width:100%;max-width:800px;padding:0 24px 40px;display:flex;flex-direction:column;gap:24px}
+.hero{text-align:center;padding:10px 0}.hero h1{font-size:2rem;font-weight:700;margin-bottom:6px}
+.hero h1 span{background:linear-gradient(135deg,#4285f4,#ea4335,#fbbc04,#34a853);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:#888;font-size:.95rem}
+.task-input{display:flex;gap:12px}
+.task-input input{flex:1;padding:14px 18px;border-radius:10px;background:#14141a;border:1px solid #2a2a3e;color:#e0e0e0;font-size:1rem;outline:none}
+.task-input input:focus{border-color:#4285f4}
+.task-input button{padding:14px 28px;border-radius:10px;background:#4285f4;color:#fff;border:none;font-weight:600;cursor:pointer;font-size:1rem}
+.task-input button:disabled{opacity:.5}
+.suggestions{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font-size:.78rem;padding:6px 14px;border-radius:20px;background:#1a1a2e;color:#888;border:1px solid #2a2a3e;cursor:pointer}.chip:hover{color:#fff;border-color:#4285f4}
+.results{display:none;flex-direction:column;gap:16px}
+.results.active{display:flex}
+.plan-card{background:#14141a;border:1px solid #1f1f2e;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:12px}
+.plan-card .icon{font-size:1.3rem}
+.plan-card.success{border-color:#1a3a1e}.plan-card.warning{border-color:#3a3a1e}
+.step-num{font-size:.7rem;color:#666}
+.loading{display:none;align-items:center;gap:12px;padding:20px;color:#888}
+.loading.active{display:flex}.spinner{width:24px;height:24px;border:2px solid #2a2a3e;border-top-color:#4285f4;border-radius:50%;animation:spin .6s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<div class="header"><div class="logo">Task<span>Flow</span></div><div class="badge" id="modelBadge">Gemini 2.0 Flash</div></div>
+<div class="main">
+<div class="hero"><h1>Your <span>AI Agent</span> That Gets Work Done</h1><p>Describe a task. TaskFlow plans and executes it autonomously.</p></div>
+<div class="task-input"><input id="taskInput" placeholder="e.g. Analyze last week's sales data and send a summary email" onkeydown="if(event.key==='Enter')run()"><button id="runBtn" onclick="run()">Execute</button></div>
+<div class="suggestions">
+<div class="chip" onclick="fill('Analyze a GitHub repo and generate a code review report')">Code Review</div>
+<div class="chip" onclick="fill('Monitor server logs and alert if error rate exceeds 5%')">Monitor Alerts</div>
+<div class="chip" onclick="fill('Generate a weekly progress report from project management tools')">Auto Reports</div>
+<div class="chip" onclick="fill('Backup database and verify integrity, notify on completion')">DB Backup</div>
+</div>
+<div class="loading" id="loading"><div class="spinner"></div><span id="loadingText">Planning workflow...</span></div>
+<div class="results" id="results"></div>
+</div>
+<script>
+var running=false;
+async function run(){
+  if(running)return;
+  var task=document.getElementById('taskInput').value.trim();
+  if(!task)return;
+  running=true;
+  document.getElementById('runBtn').disabled=true;
+  document.getElementById('loading').classList.add('active');
+  document.getElementById('results').classList.remove('active');
+  document.getElementById('results').innerHTML='';
+  var msgs=['Analyzing task...','Breaking into steps...','Executing workflow...','Processing results...','Almost done...'];
+  var mi=0;
+  var iv=setInterval(()=>{mi=(mi+1)%msgs.length;document.getElementById('loadingText').textContent=msgs[mi]},2000);
+  try{
+    var r=await fetch('/api/execute',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({task})});
+    var d=await r.json();
+    clearInterval(iv);
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('modelBadge').textContent=d.model==='mock'?'Mock Mode':'Gemini 2.0 Flash';
+    renderResults(d);
+  }catch(e){
+    clearInterval(iv);
+    document.getElementById('loading').classList.remove('active');
+    document.getElementById('results').innerHTML='<div class="plan-card warning"><span>Error: '+e.message+'</span></div>';
+    document.getElementById('results').classList.add('active');
+  }
+  running=false;
+  document.getElementById('runBtn').disabled=false;
+}
+function renderResults(d){
+  var el=document.getElementById('results');
+  el.classList.add('active');
+  var plan=d.plan||[];
+  var exec=d.execution||[];
+  el.innerHTML='<h3 style="font-size:1rem">Workflow Plan ('+plan.length+' steps)</h3>'+
+    plan.map((s,i)=>'<div class="plan-card"><span class="icon">'+(i+1)+'</span><span>'+s+'</span></div>').join('')+
+    '<h3 style="font-size:1rem;margin-top:8px">Execution Results</h3>'+
+    exec.map(e=>'<div class="plan-card '+e.status+'"><span class="icon">'+(e.status==='success'?'✅':'⚠️')+'</span><div><div>'+e.step+'</div><div style="font-size:.75rem;color:#888">'+e.result+'</div></div></div>').join('')+
+    '<div class="plan-card success" style="border-color:#4285f4"><span class="icon">🤖</span><span>'+d.summary+'</span></div>';
+}
+function fill(t){document.getElementById('taskInput').value=t}
+</script>
+</body>
+</html>

@@ -1,0 +1,11 @@
+﻿{
+  "name": "taskflow",
+  "version": "1.0.0",
+  "description": "AI Workflow Automation Agent - All Things Agentic Hackathon 2026",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": {
+    "express": "^4.18.2",
+    "@google/generative-ai": "^0.21.0"
+  }
+}
