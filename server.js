@@ -18,7 +18,7 @@ app.post('/api/execute', async (req, res) => {
     if (!task) return res.status(400).json({ error: 'No task provided' });
     if (!genAI) return res.json(executeMock(task));
 
-    const model = genAI.getGenerativeModel({ model: 'gemini-2.0-flash' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-gemini-3.5-flash.0-flash' });
     const prompt = `You are TaskFlow, an autonomous workflow agent. Given a task, break it down into steps and simulate executing them.
 
 Task: "${task}"
@@ -29,7 +29,7 @@ Respond in strict JSON format (no markdown, no code blocks):
     const result = await model.generateContent(prompt);
     const text = result.response.text().replace(/```json\n?/g,'').replace(/```/g,'').trim();
     const json = JSON.parse(text);
-    res.json({ success: true, ...json, model: 'gemini-2.0-flash' });
+    res.json({ success: true, ...json, model: 'gemini-gemini-3.5-flash.0-flash' });
   } catch (e) {
     console.error(e.message);
     res.json(executeMock(req.body.task));
