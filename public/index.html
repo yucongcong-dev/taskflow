@@ -31,7 +31,7 @@ body{font-family:-apple-system,system-ui,sans-serif;background:#0a0a0f;color:#e0
 </style>
 </head>
 <body>
-<div class="header"><div class="logo">Task<span>Flow</span></div><div class="badge" id="modelBadge">Gemini 2.0 Flash</div></div>
+<div class="header"><div class="logo">Task<span>Flow</span></div><div class="badge" id="modelBadge">Gemini 3.5 Flash + ADK</div></div>
 <div class="main">
 <div class="hero"><h1>Your <span>AI Agent</span> That Gets Work Done</h1><p>Describe a task. TaskFlow plans and executes it autonomously.</p></div>
 <div class="task-input"><input id="taskInput" placeholder="e.g. Analyze last week's sales data and send a summary email" onkeydown="if(event.key==='Enter')run()"><button id="runBtn" onclick="run()">Execute</button></div>
@@ -63,7 +63,7 @@ async function run(){
     var d=await r.json();
     clearInterval(iv);
     document.getElementById('loading').classList.remove('active');
-    document.getElementById('modelBadge').textContent=d.model==='mock'?'Mock Mode':'Gemini 2.0 Flash';
+    document.getElementById('modelBadge').textContent=d.model==='mock'?'Mock Mode':'Gemini 3.5 Flash + ADK';
     renderResults(d);
   }catch(e){
     clearInterval(iv);
